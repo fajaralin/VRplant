@@ -853,6 +853,27 @@ body {
     gap: 10px;
 }
 
+.ar-gizmos .btn {
+    background-color: rgba(10, 14, 23, 0.75) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm) !important;
+    font-size: 1.1rem;
+}
+
+.ar-gizmos .btn:hover {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+}
+
 .ar-status {
     pointer-events: auto;
     align-self: center;
