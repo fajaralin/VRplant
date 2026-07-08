@@ -1548,6 +1548,18 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Browser ini tidak mendukung akses kamera. Coba Chrome atau Safari versi terbaru.', 'danger');
             return;
         }
+
+        // CRITICAL: Synchronously trigger video play inside user gesture context
+        // to prevent browsers from blocking autoplay when we get the stream asynchronously later.
+        try {
+            const playPromise = arVideo.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
+            }
+        } catch (e) {
+            console.warn("User-gesture play pre-warm ignored:", e);
+        }
+
         try {
             // Try back camera first, fall back to any camera
             let constraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
@@ -1557,29 +1569,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Fallback: try any camera
                 arStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             }
+            
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
-            const initRendering = () => {
-                if (arCameraActive) return;
+            // Play video stream programmatically now that source is attached
+            try {
+                arVideo.play().catch(e => console.warn("Video play failed:", e));
+            } catch (e) {}
+
+            // Immediately start rendering over the container
+            if (!arCameraActive) {
                 startARCameraRendering();
-            };
-
-            // Wait for video metadata to initialize sizing
-            arVideo.onloadedmetadata = () => {
-                arVideo.play().then(initRendering).catch(err => {
-                    console.warn("Video play failed on metadata:", err);
-                    initRendering();
-                });
-            };
-
-            // Secondary safety: trigger playback and initialization after a short timeout
-            setTimeout(() => {
-                arVideo.play().then(initRendering).catch(err => {
-                    console.warn("Video play failed on timeout fallback:", err);
-                    initRendering();
-                });
-            }, 250);
+            }
         } catch (err) {
             console.error('Camera Access Error:', err);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
