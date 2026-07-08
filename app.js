@@ -1549,17 +1549,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // CRITICAL: Synchronously trigger video play inside user gesture context
-        // to prevent browsers from blocking autoplay when we get the stream asynchronously later.
-        try {
-            const playPromise = arVideo.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {});
-            }
-        } catch (e) {
-            console.warn("User-gesture play pre-warm ignored:", e);
-        }
-
         try {
             // Try back camera first, fall back to any camera
             let constraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
@@ -1570,12 +1559,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 arStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             }
             
+            // Set properties explicitly in JS to satisfy mobile browser autoplay requirements
+            arVideo.muted = true;
+            arVideo.playsInline = true;
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
             // Play video stream programmatically now that source is attached
             try {
-                arVideo.play().catch(e => console.warn("Video play failed:", e));
+                arVideo.play().then(() => {
+                    console.log("AR Video playing successfully");
+                }).catch(e => {
+                    console.warn("Video play failed:", e);
+                });
             } catch (e) {}
 
             // Immediately start rendering over the container
@@ -1944,4 +1940,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Quick delay trigger resize to make sure ThreeJS container computes correct offset sizing
     triggerResize();
+
+    // Global listeners to output runtime errors on mobile screens via toast
+    window.addEventListener('error', (e) => {
+        showToast('JS Error: ' + e.message + ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')', 'danger');
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+        showToast('Promise Reject: ' + e.reason, 'danger');
+    });
 });
