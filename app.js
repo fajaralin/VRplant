@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scene.add(rimLight);
 
         // Ground Grid Helper for context (adjusted for full-body model standing height)
-        const gridHelper = new THREE.GridHelper(10, 10, 0x4f46e5, 0x1f2937);
+        const gridHelper = new THREE.GridHelper(10, 10, 0x4f46e5, 0xcbd5e1);
         gridHelper.position.y = -2.97;
         scene.add(gridHelper);
 
