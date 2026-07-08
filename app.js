@@ -1412,9 +1412,11 @@ document.addEventListener('DOMContentLoaded', () => {
         resetSenseSelection();
     });
 
-    btnExportGlb.addEventListener('click', () => {
-        exportToGLB();
-    });
+    if (btnExportGlb) {
+        btnExportGlb.addEventListener('click', () => {
+            exportToGLB();
+        });
+    }
 
     // Export 3D Chibi character to GLB format
     function exportToGLB() {
