@@ -1571,6 +1571,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Show immediate loading feedback to avoid perceived "stuck" state
+        btnRequestCamera.disabled = true;
+        btnRequestCamera.textContent = "Menghubungkan Kamera...";
+
         try {
             let stream;
             try {
@@ -1616,8 +1620,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Immediately start AR camera rendering
             startARCameraRendering();
+            
+            // Restore button text just in case they reopen the screen later
+            btnRequestCamera.disabled = false;
+            btnRequestCamera.textContent = "Izinkan Akses Kamera";
         } catch (err) {
             console.error('Camera Access Error:', err);
+            btnRequestCamera.disabled = false;
+            btnRequestCamera.textContent = "Izinkan Akses Kamera";
             showToast('Akses kamera ditolak. Silakan berikan izin untuk mode AR.', 'danger');
         }
     }
