@@ -1575,23 +1575,33 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRequestCamera.disabled = true;
         btnRequestCamera.textContent = "Menghubungkan Kamera...";
 
+        // Helper function for timeout
+        const getUserMediaWithTimeout = (constraints, timeoutMs = 4000) => {
+            return Promise.race([
+                navigator.mediaDevices.getUserMedia(constraints),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout")), timeoutMs)
+                )
+            ]);
+        };
+
         try {
             let stream;
             try {
-                // Try back camera first
+                // Try back camera with 'ideal' constraint first (highly compatible, avoids hardware lock hangs)
                 const constraints = {
-                    video: { facingMode: 'environment' },
+                    video: { facingMode: { ideal: 'environment' } },
                     audio: false
                 };
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                stream = await getUserMediaWithTimeout(constraints, 4000);
             } catch (firstErr) {
-                console.warn("Back camera constraint failed, retrying with default video constraints...", firstErr);
-                // Fallback to any available video stream
+                console.warn("Back camera constraint failed or timed out, retrying with default video...", firstErr);
+                // Fallback to any available video stream with a shorter timeout
                 const constraints = {
                     video: true,
                     audio: false
                 };
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                stream = await getUserMediaWithTimeout(constraints, 3000);
             }
 
             arStream = stream;
@@ -1640,7 +1650,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Camera Access Error:', err);
             btnRequestCamera.disabled = false;
             btnRequestCamera.textContent = "Izinkan Akses Kamera";
-            showToast('Akses kamera ditolak. Silakan berikan izin untuk mode AR.', 'danger');
+            showToast('Gagal terhubung ke kamera. Pastikan izin kamera aktif di pengaturan HP Anda.', 'danger');
         }
     }
 
