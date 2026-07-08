@@ -1550,13 +1550,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Try back camera first, fall back to any camera
-            let constraints = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+            // Try back camera first with a fast, mobile-optimized resolution (640x480)
+            let constraints = { 
+                video: { 
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                }, 
+                audio: false 
+            };
             try {
                 arStream = await navigator.mediaDevices.getUserMedia(constraints);
             } catch (e) {
-                // Fallback: try any camera
-                arStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                // Fallback: try any camera with standard resolution
+                arStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: { ideal: 640 }, height: { ideal: 480 } }, 
+                    audio: false 
+                });
             }
             
             // Set properties explicitly in JS to satisfy mobile browser autoplay requirements
