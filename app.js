@@ -1602,21 +1602,33 @@ document.addEventListener('DOMContentLoaded', () => {
             arVideo.setAttribute('autoplay', '');
             arVideo.setAttribute('muted', '');
             arVideo.setAttribute('playsinline', '');
+            
             arVideo.srcObject = arStream;
+            
+            // Force browser to load the new stream source (Critical iOS Safari fix)
+            try {
+                arVideo.load();
+            } catch (loadErr) {
+                console.warn("video.load() failed, continuing...", loadErr);
+            }
+
             arPermissionScreen.classList.add('hidden');
             const arOverlay = document.getElementById('ar-labels-overlay');
             if (arOverlay) arOverlay.classList.remove('hidden');
             
-            // Play stream asynchronously without blocking ThreeJS start
-            try {
-                arVideo.play().then(() => {
-                    console.log("AR Video playing successfully");
-                }).catch(e => {
-                    console.warn("Video play failed:", e);
-                });
-            } catch (e) {
-                console.warn("Video play trigger error:", e);
-            }
+            // Play stream with a 100ms delay to allow hardware track binding to stabilize
+            setTimeout(() => {
+                try {
+                    arVideo.play().then(() => {
+                        console.log("AR Video playing successfully");
+                    }).catch(e => {
+                        console.warn("Video play failed, retrying play...", e);
+                        arVideo.play().catch(retryErr => console.error("Video play retry failed:", retryErr));
+                    });
+                } catch (playErr) {
+                    console.warn("Video play trigger error:", playErr);
+                }
+            }, 100);
 
             // Immediately start AR camera rendering
             startARCameraRendering();
