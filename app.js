@@ -1538,83 +1538,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function requestCameraAccess() {
-        // Check HTTPS requirement
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-            showToast('⚠️ Mode AR membutuhkan koneksi HTTPS. Buka via link Vercel (https://) untuk menggunakan kamera.', 'danger');
-            return;
-        }
-        // Check browser support
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            showToast('Browser ini tidak mendukung akses kamera. Coba Chrome atau Safari versi terbaru.', 'danger');
-            return;
-        }
-
         try {
-            // Try back camera first with a fast, mobile-optimized resolution (640x480)
-            let constraints = { 
-                video: { 
-                    facingMode: { ideal: 'environment' },
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }, 
-                audio: false 
+            const constraints = {
+                video: { facingMode: 'environment' }, // Back camera preferred
+                audio: false
             };
-            try {
-                arStream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (e) {
-                // Fallback: try any camera with standard resolution
-                arStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: { ideal: 640 }, height: { ideal: 480 } }, 
-                    audio: false 
-                });
-            }
-            
-            // Set properties explicitly in JS to satisfy mobile browser autoplay requirements
-            arVideo.muted = true;
-            arVideo.playsInline = true;
-            arVideo.setAttribute('autoplay', '');
-            arVideo.setAttribute('muted', '');
-            arVideo.setAttribute('playsinline', '');
-            arVideo.muted = true;
-            arVideo.playsInline = true;
+            arStream = await navigator.mediaDevices.getUserMedia(constraints);
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
-            // Play video stream programmatically now that source is attached
-            try {
-                arVideo.play().then(() => {
-                    console.log("AR Video playing successfully");
-                }).catch(e => {
-                    console.warn("Video play failed:", e);
-                });
-            } catch (e) {}
-
-            // Immediately start rendering over the container
-            if (!arCameraActive) {
+            // Wait for video metadata to initialize sizing
+            arVideo.onloadedmetadata = () => {
                 startARCameraRendering();
-            }
+            };
         } catch (err) {
             console.error('Camera Access Error:', err);
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                showToast('Akses kamera ditolak. Buka Pengaturan Browser → Izin → Kamera → Izinkan.', 'danger');
-            } else if (err.name === 'NotFoundError') {
-                showToast('Kamera tidak ditemukan di perangkat ini.', 'danger');
-            } else {
-                showToast('Gagal mengakses kamera: ' + err.message, 'danger');
-            }
+            showToast('Akses kamera ditolak. Silakan berikan izin untuk mode AR.', 'danger');
         }
     }
 
     function startARCameraRendering() {
-        if (arCameraActive) return; // Prevent double initialization
         arCameraActive = true;
         
         // Set canvas sizing match video display viewport size
         const container = arCanvas.parentElement;
-        const width = container.clientWidth || window.innerWidth;
-        const height = container.clientHeight || (window.innerWidth * 0.56);
-        arCanvas.width = width;
-        arCanvas.height = height;
+        arCanvas.width = container.clientWidth;
+        arCanvas.height = container.clientHeight;
 
         // Initialize AR 3D Scene
         arScene = new THREE.Scene();
@@ -1628,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', () => {
             antialias: true,
             alpha: true // Critical for rendering over camera video element background
         });
-        arRenderer.setSize(width, height);
+        arRenderer.setSize(arCanvas.width, arCanvas.height);
         arRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         arRenderer.setClearColor(0x000000, 0); // Transparent background
 
