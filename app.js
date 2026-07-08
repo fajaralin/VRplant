@@ -1544,12 +1544,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 audio: false
             };
             arStream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            // Set properties explicitly to satisfy mobile browser autoplay requirements
+            arVideo.muted = true;
+            arVideo.playsInline = true;
+            arVideo.setAttribute('autoplay', '');
+            arVideo.setAttribute('muted', '');
+            arVideo.setAttribute('playsinline', '');
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
             // Wait for video metadata to initialize sizing
             arVideo.onloadedmetadata = () => {
-                startARCameraRendering();
+                try {
+                    arVideo.play().then(() => {
+                        console.log("AR Video playing successfully");
+                        startARCameraRendering();
+                    }).catch(e => {
+                        console.warn("Video play failed:", e);
+                        startARCameraRendering();
+                    });
+                } catch (e) {
+                    startARCameraRendering();
+                }
             };
         } catch (err) {
             console.error('Camera Access Error:', err);
