@@ -1561,12 +1561,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function requestCameraAccess() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('Camera API not available.');
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                showToast('Akses kamera gagal: Mode AR membutuhkan koneksi aman (HTTPS). Hubungkan menggunakan HTTPS di HP.', 'danger');
+            } else {
+                showToast('Kamera tidak didukung oleh browser ini.', 'danger');
+            }
+            return;
+        }
+
         try {
-            const constraints = {
-                video: { facingMode: 'environment' }, // Back camera preferred
-                audio: false
-            };
-            arStream = await navigator.mediaDevices.getUserMedia(constraints);
+            let stream;
+            try {
+                // Try back camera first
+                const constraints = {
+                    video: { facingMode: 'environment' },
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (firstErr) {
+                console.warn("Back camera constraint failed, retrying with default video constraints...", firstErr);
+                // Fallback to any available video stream
+                const constraints = {
+                    video: true,
+                    audio: false
+                };
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+            }
+
+            arStream = stream;
             
             // Set properties explicitly to satisfy mobile browser autoplay requirements
             arVideo.muted = true;
@@ -1579,20 +1603,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const arOverlay = document.getElementById('ar-labels-overlay');
             if (arOverlay) arOverlay.classList.remove('hidden');
             
-            // Wait for video metadata to initialize sizing
-            arVideo.onloadedmetadata = () => {
-                try {
-                    arVideo.play().then(() => {
-                        console.log("AR Video playing successfully");
-                        startARCameraRendering();
-                    }).catch(e => {
-                        console.warn("Video play failed:", e);
-                        startARCameraRendering();
-                    });
-                } catch (e) {
-                    startARCameraRendering();
-                }
-            };
+            // Play stream asynchronously without blocking ThreeJS start
+            try {
+                arVideo.play().then(() => {
+                    console.log("AR Video playing successfully");
+                }).catch(e => {
+                    console.warn("Video play failed:", e);
+                });
+            } catch (e) {
+                console.warn("Video play trigger error:", e);
+            }
+
+            // Immediately start AR camera rendering
+            startARCameraRendering();
         } catch (err) {
             console.error('Camera Access Error:', err);
             showToast('Akses kamera ditolak. Silakan berikan izin untuk mode AR.', 'danger');
