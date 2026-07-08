@@ -1588,12 +1588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dirLight.position.set(3, 5, 4);
         arScene.add(dirLight);
 
-        // Debug visual indicator: add a floating green sphere above the model
-        const debugGeo = new THREE.SphereGeometry(0.15, 16, 16);
-        const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        const debugMesh = new THREE.Mesh(debugGeo, debugMat);
-        debugMesh.position.set(0, 0.8, 0.2);
-        arScene.add(debugMesh);
+
 
         // Build a separate 3D character instance for AR
         // Build AR model matching the active project
