@@ -1562,6 +1562,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set properties explicitly in JS to satisfy mobile browser autoplay requirements
             arVideo.muted = true;
             arVideo.playsInline = true;
+            arVideo.setAttribute('autoplay', '');
+            arVideo.setAttribute('muted', '');
+            arVideo.setAttribute('playsinline', '');
+            arVideo.muted = true;
+            arVideo.playsInline = true;
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
@@ -1615,6 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         arRenderer.setSize(width, height);
         arRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        arRenderer.setClearColor(0x000000, 0); // Transparent background
 
         // Add soft lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -1622,6 +1628,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
         dirLight.position.set(3, 5, 4);
         arScene.add(dirLight);
+
+        // Debug visual indicator: add a floating green sphere above the model
+        const debugGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const debugMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const debugMesh = new THREE.Mesh(debugGeo, debugMat);
+        debugMesh.position.set(0, 0.8, 0.2);
+        arScene.add(debugMesh);
 
         // Build a separate 3D character instance for AR
         // Build AR model matching the active project
