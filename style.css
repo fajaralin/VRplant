@@ -1681,7 +1681,7 @@ body {
         gap: 6px;
         white-space: nowrap;
         border-radius: 20px;
-        background: rgba(255,255,255,0.04);
+        background: rgba(15, 23, 42, 0.05);
     }
     .nav-item .icon { width: 15px; height: 15px; }
     .nav-item.active {
@@ -1704,7 +1704,7 @@ body {
         position: sticky;
         top: 0;
         z-index: 100;
-        background-color: rgba(10, 14, 23, 0.95);
+        background-color: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
     }
 
