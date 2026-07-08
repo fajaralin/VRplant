@@ -1288,6 +1288,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.getElementById('ar-labels-overlay').addEventListener('click', (e) => {
+        const btn = e.target.closest('.hotspot-label');
+        if (btn) {
+            e.stopPropagation();
+            selectSense(btn.getAttribute('data-sense'));
+        }
+    });
+
     document.getElementById('quick-select-container').addEventListener('click', (e) => {
         const btn = e.target.closest('.quick-btn');
         if (btn) selectSense(btn.getAttribute('data-sense'));
@@ -1319,6 +1327,19 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = `<span class="ring"></span><span class="dot"></span>${currentProject.senses[key].title}`;
             overlay.appendChild(btn);
         });
+
+        // Rebuild AR hotspot labels
+        const arOverlay = document.getElementById('ar-labels-overlay');
+        if (arOverlay) {
+            arOverlay.innerHTML = '';
+            Object.keys(currentProject.senses).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `hotspot-label label-${key} ar-label-${key}`;
+                btn.setAttribute('data-sense', key);
+                btn.innerHTML = `<span class="ring"></span><span class="dot"></span>${currentProject.senses[key].title}`;
+                arOverlay.appendChild(btn);
+            });
+        }
 
         // Rebuild quick-select buttons
         const qsc = document.getElementById('quick-select-container');
@@ -1553,6 +1574,8 @@ document.addEventListener('DOMContentLoaded', () => {
             arVideo.setAttribute('playsinline', '');
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
+            const arOverlay = document.getElementById('ar-labels-overlay');
+            if (arOverlay) arOverlay.classList.remove('hidden');
             
             // Wait for video metadata to initialize sizing
             arVideo.onloadedmetadata = () => {
@@ -1637,6 +1660,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!arCameraActive) return;
         requestAnimationFrame(animateAR);
 
+        // Project AR hotspot labels
+        updateARHotspotLabelsProjection();
+
         // Slow idle rotation on AR
         if (arModel) {
             // Let the user rotate it manually, or float slightly
@@ -1649,6 +1675,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function stopARCamera() {
         arCameraActive = false;
         
+        const arOverlay = document.getElementById('ar-labels-overlay');
+        if (arOverlay) arOverlay.classList.add('hidden');
+        
         // Stop video stream track
         if (arStream) {
             arStream.getTracks().forEach(track => track.stop());
@@ -1660,6 +1689,45 @@ document.addEventListener('DOMContentLoaded', () => {
             arRenderer.dispose();
             arRenderer = null;
         }
+    }
+
+    function updateARHotspotLabelsProjection() {
+        if (!arCameraActive || !arCamera || !arRenderer || !arModel) return;
+        
+        const arOverlay = document.getElementById('ar-labels-overlay');
+        if (!arOverlay) return;
+
+        const container = arCanvas.parentElement;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const tempV = new THREE.Vector3();
+
+        Object.keys(currentProject.hotspotCoords).forEach(sense => {
+            const labelBtn = arOverlay.querySelector(`.hotspot-label.ar-label-${sense}`);
+            if (!labelBtn) return;
+
+            tempV.copy(currentProject.hotspotCoords[sense]);
+
+            // Transform based on the AR model's matrix
+            arModel.updateMatrixWorld(true);
+            tempV.applyMatrix4(arModel.matrixWorld);
+
+            // Project coordinates using the AR camera
+            tempV.project(arCamera);
+
+            const isBehind = tempV.z > 1.0;
+
+            if (isBehind) {
+                labelBtn.style.display = 'none';
+            } else {
+                labelBtn.style.display = 'flex';
+                const x = (tempV.x * 0.5 + 0.5) * width;
+                const y = (tempV.y * -0.5 + 0.5) * height;
+                
+                labelBtn.style.left = `${x}px`;
+                labelBtn.style.top = `${y}px`;
+            }
+        });
     }
 
     // AR Gizmos control handlers
