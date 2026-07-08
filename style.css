@@ -444,7 +444,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .pulse-dot {
@@ -507,7 +507,7 @@ body {
     background: rgba(10, 14, 23, 0.85);
     backdrop-filter: blur(6px);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    color: #ffffff;
     padding: 6px 12px;
     border-radius: 30px;
     font-family: var(--font-heading);
@@ -1435,7 +1435,7 @@ body {
 }
 
 #share-url {
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(15, 23, 42, 0.04);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 10px 14px;
@@ -1468,7 +1468,7 @@ body {
     border: 1px solid var(--border-color);
     border-left: 4px solid var(--color-primary);
     border-radius: var(--radius-sm);
-    color: var(--text-primary);
+    color: #ffffff;
     padding: 12px 20px;
     font-size: 0.85rem;
     font-weight: 500;
