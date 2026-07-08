@@ -1560,10 +1560,26 @@ document.addEventListener('DOMContentLoaded', () => {
             arVideo.srcObject = arStream;
             arPermissionScreen.classList.add('hidden');
             
-            // Wait for video metadata to initialize sizing
-            arVideo.onloadedmetadata = () => {
+            const initRendering = () => {
+                if (arCameraActive) return;
                 startARCameraRendering();
             };
+
+            // Wait for video metadata to initialize sizing
+            arVideo.onloadedmetadata = () => {
+                arVideo.play().then(initRendering).catch(err => {
+                    console.warn("Video play failed on metadata:", err);
+                    initRendering();
+                });
+            };
+
+            // Secondary safety: trigger playback and initialization after a short timeout
+            setTimeout(() => {
+                arVideo.play().then(initRendering).catch(err => {
+                    console.warn("Video play failed on timeout fallback:", err);
+                    initRendering();
+                });
+            }, 250);
         } catch (err) {
             console.error('Camera Access Error:', err);
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -1577,12 +1593,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startARCameraRendering() {
+        if (arCameraActive) return; // Prevent double initialization
         arCameraActive = true;
         
         // Set canvas sizing match video display viewport size
         const container = arCanvas.parentElement;
-        arCanvas.width = container.clientWidth;
-        arCanvas.height = container.clientHeight;
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || (window.innerWidth * 0.56);
+        arCanvas.width = width;
+        arCanvas.height = height;
 
         // Initialize AR 3D Scene
         arScene = new THREE.Scene();
@@ -1596,7 +1615,7 @@ document.addEventListener('DOMContentLoaded', () => {
             antialias: true,
             alpha: true // Critical for rendering over camera video element background
         });
-        arRenderer.setSize(arCanvas.width, arCanvas.height);
+        arRenderer.setSize(width, height);
         arRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
         // Add soft lighting
